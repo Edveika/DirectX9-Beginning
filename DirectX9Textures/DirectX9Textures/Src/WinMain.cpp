@@ -24,25 +24,9 @@ LPDIRECT3DVERTEXBUFFER9 g_pVB = NULL;
 LPDIRECT3DINDEXBUFFER9 g_pIB = NULL;
 LPDIRECT3DTEXTURE9 texture = NULL;
 
-// Identiy matrix default values:
-//float TheMatrix[4][4] =
-//{
-//	1.0f, 0.0f, 0.0f, 0.0f,
-//	0.0f, 1.0f, 0.0f, 0.0f,
-//	0.0f, 0.0f, 1.0f, 0.0f,
-//	0.0f, 0.0f, 0.0f, 1.0f
-//};
-
-struct
-{
-	float x, y, z; // coordinates
-	float R, G, B, A; // color
-} vertex;
-
 struct CUSTOMVERTEX
 {
 	FLOAT x, y, z; // untransformed 3d position for the vertex
-		//rhw; // Reciprocal of Homogeneous W tells direct3d that vertices that are being used are already in screen coordinates. Used in fog and clip calc, shoud be 1.0 or 0
 	DWORD color; // macro D3DCOLOR_ARGB(a,r,g,b)
 };
 

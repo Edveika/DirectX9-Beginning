@@ -12,7 +12,7 @@
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 600
-#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | D3DFVF_DIFFUSE) // D3DFVF_XYZ no RHW means that we are using 3d coords. trying to draw without puting vertices through pipeline will result in no drawing
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | D3DFVF_NORMAL) // D3DFVF_XYZ no RHW means that we are using 3d coords. trying to draw without puting vertices through pipeline will result in no drawing
 
 // Global variables
 std::vector<std::string> adapterDetails;
@@ -23,26 +23,9 @@ LPDIRECT3DDEVICE9 pd3dDevice; // d3d9 device
 LPDIRECT3DVERTEXBUFFER9 g_pVB = NULL;
 LPDIRECT3DINDEXBUFFER9 g_pIB = NULL;
 
-// Identiy matrix default values:
-//float TheMatrix[4][4] =
-//{
-//	1.0f, 0.0f, 0.0f, 0.0f,
-//	0.0f, 1.0f, 0.0f, 0.0f,
-//	0.0f, 0.0f, 1.0f, 0.0f,
-//	0.0f, 0.0f, 0.0f, 1.0f
-//}; 
-
-struct
-{
-	float x, y, z; // coordinates
-	float R, G, B, A; // color
-} vertex;
-
 struct CUSTOMVERTEX
 {
-	FLOAT x, y, z; // untransformed 3d position for the vertex
-		//rhw; // Reciprocal of Homogeneous W tells direct3d that vertices that are being used are already in screen coordinates. Used in fog and clip calc, shoud be 1.0 or 0
-	DWORD color; // macro D3DCOLOR_ARGB(a,r,g,b)
+	FLOAT x, y, z; D3DVECTOR NORMAL; // untransformed 3d position for the vertex
 };
 // Declarations
 bool InitWindow(HINSTANCE hInstance);
@@ -52,7 +35,6 @@ void Render();
 void CleanUp();
 void AddItemToList(std::string item);
 HRESULT SetupVertexBuffer();
-HRESULT SetupIndexBuffer();
 void CreateAmbientLight();
 void CreateDirectionalLight();
 void CreatePointLight();
@@ -67,6 +49,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	// Initialize direct3d
 	if (!InitDirect3D())
+		return false;
+
+	if (SetupVertexBuffer() == E_FAIL)
 		return false;
 
 	// Main message loop
@@ -95,9 +80,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		// Otherwise
 		else
 		{
-			SetupVertexBuffer();
-			SetupIndexBuffer();
-
 			// Render function is being called once a frame
 			Render();
 		}
@@ -120,7 +102,7 @@ bool InitWindow(HINSTANCE hInstance)
 	wcex.style = CS_HREDRAW | CS_VREDRAW; // class style
 	wcex.lpfnWndProc = (WNDPROC)WndProc; //window procedure callback
 	wcex.cbClsExtra = 0; // extra bytes to allocate for this class
-	wcex.cbWndExtra = 0; // extra bytes to allocate for this 
+	wcex.cbWndExtra = 0; // extra bytes to allocate for this DirectX9LineLists
 	wcex.hInstance = hInstance; // handle to the application instance
 	wcex.hIcon = 0; //icon for the application
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW); // default cursor
@@ -249,8 +231,8 @@ bool InitDirect3D()
 	)))
 		return false;
 
-	// turn off the 3D lighting
-	pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+	CreateDirectionalLight();
+	pd3dDevice->SetRenderState(D3DRS_LIGHTING, TRUE);    // turn on the 3D lighting
 
 	return true;
 }
@@ -284,14 +266,18 @@ void Render()
 
 	pd3dDevice->BeginScene();
 
+
+	pd3dDevice->SetRenderState(D3DRS_AMBIENT, D3DCOLOR_XRGB(200, 200, 200));    // ambient light
+
+	//CreateAmbientLight();
+
 	pd3dDevice->SetStreamSource(0, g_pVB, 0, sizeof(CUSTOMVERTEX));
 	
 	pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
 
-	CreateDirectionalLight();
+	pd3dDevice->SetRenderState(D3DRS_AMBIENT, D3DCOLOR_XRGB(50, 50, 50));
 
 	// SET UP THE PIPELINE
-
 	D3DXMATRIX matRotateX;    // a matrix to store the rotation information
 	D3DXMATRIX matRotateY;    // a matrix to store the rotation information
 
@@ -306,7 +292,7 @@ void Render()
 	// build a matrix to move the model 12 units along the x-axis and 4 units along the y-axis
 	// store it to matTranslate
 	//static float move = 0.0f; move += 0.05f;
-	D3DXMatrixTranslation(&matTranslate, 12.0f, index, 0.0f);
+	D3DXMatrixTranslation(&matTranslate, 12.0f, 0.0f, 0.0f);
 
 	// tell Direct3D about our matrix
 	pd3dDevice->SetTransform(D3DTS_WORLD, &(matRotateX * matRotateY* matTranslate));
@@ -337,15 +323,6 @@ void Render()
 	pd3dDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 16, 2);
 	pd3dDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 20, 2);
 
-	//pd3dDevice->SetIndices(g_pIB);
-
-	//pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, // PrimitiveType
-	//	0,                  // BaseVertexIndex
-	//	0,                  // MinIndex
-	//	36,                  // NumVertices
-	//	0,                  // StartIndex
-	//	12);                // PrimitiveCount
-
 	pd3dDevice->EndScene();
 
 	// Present the back buffer contents to the display
@@ -375,41 +352,35 @@ HRESULT SetupVertexBuffer()
 
 	CUSTOMVERTEX vertices[] =
 	{
-		// 1
-		{-2.0f, 2.0f, -2.0f, D3DCOLOR_ARGB(0,0,255,0)},
-		{2.0f, 2.0f, -2.0f, D3DCOLOR_ARGB(0,0,255,0)},
-		{-2.0f, -2.0f, -2.0f, D3DCOLOR_ARGB(0,0,255,0)},
-		{2.0f, -2.0f, -2.0f, D3DCOLOR_ARGB(0,0,255,0)},
+		{ -3.0f, -3.0f, 3.0f, 0.0f, 0.0f, 1.0f, },    // side 1
+		{ 3.0f, -3.0f, 3.0f, 0.0f, 0.0f, 1.0f, },
+		{ -3.0f, 3.0f, 3.0f, 0.0f, 0.0f, 1.0f, },
+		{ 3.0f, 3.0f, 3.0f, 0.0f, 0.0f, 1.0f, },
 
-		//// 2
-		{-2.0f, 2.0f, 2.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{-2.0f, -2.0f, 2.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{2.0f, 2.0f, 2.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{2.0f, -2.0f, 2.0f, D3DCOLOR_ARGB(0,0,0,255)},
+		{ -3.0f, -3.0f, -3.0f, 0.0f, 0.0f, -1.0f, },    // side 2
+		{ -3.0f, 3.0f, -3.0f, 0.0f, 0.0f, -1.0f, },
+		{ 3.0f, -3.0f, -3.0f, 0.0f, 0.0f, -1.0f, },
+		{ 3.0f, 3.0f, -3.0f, 0.0f, 0.0f, -1.0f, },
 
-		// 3
-		{-2.0f, 2.0f, 2.0f, D3DCOLOR_ARGB(0,255,0,0)},
-		{2.0f, 2.0f, 2.0f, D3DCOLOR_ARGB(0,255,0,0)},
-		{-2.0f, 2.0f, -2.0f, D3DCOLOR_ARGB(0,255,0,0)},
-		{2.0f, 2.0f, -2.0f, D3DCOLOR_ARGB(0,255,0,0)},
+		{ -3.0f, 3.0f, -3.0f, 0.0f, 1.0f, 0.0f, },    // side 3
+		{ -3.0f, 3.0f, 3.0f, 0.0f, 1.0f, 0.0f, },
+		{ 3.0f, 3.0f, -3.0f, 0.0f, 1.0f, 0.0f, },
+		{ 3.0f, 3.0f, 3.0f, 0.0f, 1.0f, 0.0f, },
 
-		// 4
-		{-2.0f, -2.0f, 2.0f, D3DCOLOR_ARGB(0,255, 119, 0)},
-		{-2.0f, -2.0f, -2.0f, D3DCOLOR_ARGB(0,255, 119, 0)},
-		{2.0f, -2.0f, 2.0f, D3DCOLOR_ARGB(0,255, 119, 0)},
-		{2.0f, -2.0f, -2.0f, D3DCOLOR_ARGB(0,255, 119, 0)},
+		{ -3.0f, -3.0f, -3.0f, 0.0f, -1.0f, 0.0f, },    // side 4
+		{ 3.0f, -3.0f, -3.0f, 0.0f, -1.0f, 0.0f, },
+		{ -3.0f, -3.0f, 3.0f, 0.0f, -1.0f, 0.0f, },
+		{ 3.0f, -3.0f, 3.0f, 0.0f, -1.0f, 0.0f, },
 
-		// 5
-		{2.0f, 2.0f, -2.0f, D3DCOLOR_ARGB(0,220, 255, 0)},
-		{2.0f, 2.0f, 2.0f, D3DCOLOR_ARGB(0,220, 255, 0)},
-		{2.0f, -2.0f, -2.0f, D3DCOLOR_ARGB(0,220, 255, 0)},
-		{2.0f, -2.0f, 2.0f, D3DCOLOR_ARGB(0,220, 255, 0)},
+		{ 3.0f, -3.0f, -3.0f, 1.0f, 0.0f, 0.0f, },    // side 5
+		{ 3.0f, 3.0f, -3.0f, 1.0f, 0.0f, 0.0f, },
+		{ 3.0f, -3.0f, 3.0f, 1.0f, 0.0f, 0.0f, },
+		{ 3.0f, 3.0f, 3.0f, 1.0f, 0.0f, 0.0f, },
 
-		// 6
-		{-2.0f, 2.0f, -2.0f, D3DCOLOR_ARGB(0,170, 0, 255)},
-		{-2.0f, -2.0f, -2.0f, D3DCOLOR_ARGB(0,170, 0, 255)},
-		{-2.0f, 2.0f, 2.0f, D3DCOLOR_ARGB(0,170, 0, 255)},
-		{-2.0f, -2.0f, 2.0f, D3DCOLOR_ARGB(0,170, 0, 255)},
+		{ -3.0f, -3.0f, -3.0f, -1.0f, 0.0f, 0.0f, },    // side 6
+		{ -3.0f, -3.0f, 3.0f, -1.0f, 0.0f, 0.0f, },
+		{ -3.0f, 3.0f, -3.0f, -1.0f, 0.0f, 0.0f, },
+		{ -3.0f, 3.0f, 3.0f, -1.0f, 0.0f, 0.0f, },
 	};	
 
 	hr = pd3dDevice->CreateVertexBuffer
@@ -450,88 +421,35 @@ HRESULT SetupVertexBuffer()
 	return S_OK;
 }
 
-HRESULT SetupIndexBuffer()
-{
-	HRESULT hr;
-
-	CUSTOMVERTEX vertices[] =
-	{
-		{-1.0f,1.0f,-1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{-1.0f,1.0f,-1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{1.0f,1.0f,-1.0f, D3DCOLOR_ARGB(0,0,0,255)},	
-		{1.0f,-1.0f,-1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{-1.0f,-1.0f,1.0f, D3DCOLOR_ARGB(0,0,0,255)}, 
-		{1.0f,-1.0f,1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{1.0f,1.0f,1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{-1.0f,1.0f,1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-	};
-
-	WORD indexes[] =
-	{
-		0,1,2,
-		2,3,0,
-		4,5,6,
-		6,7,4,
-		0,3,5,
-		5,4,0,
-		3,2,6,
-		6,5,3,
-		2,1,7,
-		7,6,2,
-		1,0,4,
-		4,7,1
-	};
-
-	hr = pd3dDevice->CreateIndexBuffer
-	(
-		sizeof(indexes) * sizeof(WORD),
-		D3DUSAGE_WRITEONLY,
-		D3DFMT_INDEX16,
-		D3DPOOL_DEFAULT,
-		&g_pIB,
-		NULL
-	);
-
-	if (FAILED(hr))
-		return E_FAIL;
-
-	void* indexPtr;
-
-	hr = g_pIB->Lock(0, 0, (void**)&indexPtr, D3DLOCK_DISCARD);
-
-	if (FAILED(hr))
-		return E_FAIL;
-
-	memcpy(vertices, indexes, sizeof(indexes));
-
-	g_pIB->Unlock();
-
-	return S_OK;
-}
-
 void CreateAmbientLight()
 {
 	pd3dDevice->SetRenderState(D3DRS_AMBIENT, D3DCOLOR_XRGB(255, 255, 255));
 }
 
-void CreateDirectionalLight(void)
+void CreateDirectionalLight()
 {
 	// Create light 
 	D3DLIGHT9 light;
+
+	// Clear the memory
+	ZeroMemory(&light, sizeof(light));
 
 	// Set the type of this light
 	light.Type = D3DLIGHT_DIRECTIONAL;
 
 	// Set the direction that this light will generate from
-	D3DXVECTOR3 vDir(1.0f, 0.0f, 0.0f);
+	D3DXVECTOR3 vDir(-1.0f, -0.3f, -1.0f);
 
 	// Normalize light direction
 	D3DXVec3Normalize((D3DXVECTOR3*)&light.Direction, &vDir);
 
 	// Set difuse color of this light
-	light.Diffuse.r = 0.0f;
-	light.Diffuse.g = 0.0f;
-	light.Diffuse.b = 0.3f;
+	light.Diffuse.r = 0.5f;
+	light.Diffuse.g = 0.5f;
+	light.Diffuse.b = 0.5f;
+
+	// Set the direction of the light
+	light.Direction = vDir;
 
 	// Set the range of this light
 	light.Range = sqrtf(FLT_MAX);
@@ -541,12 +459,24 @@ void CreateDirectionalLight(void)
 
 	// Enable the created light(index 0)
 	pd3dDevice->LightEnable(0, TRUE);
+
+	// Create material
+	D3DMATERIAL9 material;
+
+	ZeroMemory(&material, sizeof(D3DMATERIAL9));    // clear out the struct for use
+	material.Diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);    // set diffuse color to white
+	material.Ambient = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);    // set ambient color to white
+
+	pd3dDevice->SetMaterial(&material);    // set the globably-used material to &material
 }
 
 void CreatePointLight()
 {
 	// Create a light
 	D3DLIGHT9 light;
+
+	// Clear the memory
+	ZeroMemory(&light, sizeof(light));
 
 	// Set the type of light
 	light.Type = D3DLIGHT_POINT;
@@ -572,6 +502,15 @@ void CreatePointLight()
 
 	// Enable the light
 	pd3dDevice->LightEnable(0, TRUE);
+
+	// Create material
+	D3DMATERIAL9 material;
+
+	ZeroMemory(&material, sizeof(D3DMATERIAL9));    // clear out the struct for use
+	material.Diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);    // set diffuse color to white
+	material.Ambient = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);    // set ambient color to white
+
+	pd3dDevice->SetMaterial(&material);    // set the globably-used material to &material
 }
 
 void CreateSpotLight()
@@ -579,14 +518,20 @@ void CreateSpotLight()
 	// Create a light
 	D3DLIGHT9 light;
 
+	// Clear the memory
+	ZeroMemory(&light, sizeof(light));
+
 	// Set the type of light
 	light.Type = D3DLIGHT_SPOT;
 
 	// Set direction for this light
-	D3DXVECTOR3 vDir(1.0f, -1.0f, 0.0f);
+	D3DXVECTOR3 vDir(-1.0f, -0.3f, -1.0f);
 
 	// Normalize it
 	D3DXVec3Normalize((D3DXVECTOR3*)&light.Direction, &vDir);
+
+	// Set direction of the light
+	light.Direction = vDir;
 
 	// Set the position of the light
 	light.Position = D3DXVECTOR3(-250, 250.0f, 0.0f);
@@ -614,4 +559,13 @@ void CreateSpotLight()
 
 	// Enable the light
 	pd3dDevice->LightEnable(0, TRUE);
+
+	// Create material
+	D3DMATERIAL9 material;
+
+	ZeroMemory(&material, sizeof(D3DMATERIAL9));    // clear out the struct for use
+	material.Diffuse = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);    // set diffuse color to white
+	material.Ambient = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);    // set ambient color to white
+
+	pd3dDevice->SetMaterial(&material);    // set the globably-used material to &material
 }

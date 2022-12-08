@@ -129,6 +129,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			QueryPerformanceCounter(&timeEnd);
 			anim_rate = ((float)timeEnd.QuadPart - (float)timeStart.QuadPart) / timeFrequency.QuadPart;
+			Sleep(10);
 		}
 	}
 
@@ -295,7 +296,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-bool bScrollDown = false;
 void Render()
 {
 	// This will hold the back buffer
@@ -311,7 +311,7 @@ void Render()
 		0,
 		NULL,
 		D3DCLEAR_TARGET, // tells dx that you want the render buffer to be cleared
-		D3DCOLOR_XRGB(255, 255, 255), // clears the screen to blue color
+		D3DCOLOR_XRGB(255, 255, 255), // clears the screen to white color
 		1.0f, // 1.0f gets passed into depth buffer. depth buffers helps dx determine how far the object uis from the viewer. (hols a vlue between 0.0f - 1.0f)
 		0 // Stencil buffer allows for masking certain areas of an image, so they arent displayed. because stencil buffer is not used, we pass 0
 	);
@@ -319,56 +319,7 @@ void Render()
 	// Get the back buffer prt
 	pd3dDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &backbuffer);
 
-	//IDirect3DSurface9* backgroundSurface;
-	//backgroundSurface = GetSurfaceFromBitmap("background.bmp", SCREEN_WIDTH, SCREEN_HEIGHT);
-	//if (backgroundSurface == NULL)
-	//	return;
-	RECT src;
-
-	Sleep(100);
-
-	if (GetAsyncKeyState(VK_UP))
-		bScrollDown = false;
-	if (GetAsyncKeyState(VK_DOWN))
-		bScrollDown = true;
-
-	if (!bScrollDown)
-	{
-		src.left = 0;
-		src.right = SCREEN_WIDTH;
-		src.bottom = SCREEN_HEIGHT;
-		src.top = 0;
-	}
-	else
-	{
-		src.left = 0;
-		src.right = SCREEN_WIDTH;
-		src.bottom = SCREEN_HEIGHT * 2;
-		src.top = SCREEN_HEIGHT;
-	}
-	
-
-	pd3dDevice->StretchRect
-	(
-		spriteSurface1,
-		&src,
-		backbuffer,
-		NULL,
-		D3DTEXF_NONE
-	);
-
-	//// Copy of the offscreen surface to the back buffer
-	//// NOTE: NULL value use ensure copy of entire surface to the back buffer
-	//pd3dDevice->StretchRect
-	//(
-	//	backgroundSurface,
-	//	NULL,
-	//	backbuffer,
-	//	NULL,
-	//	D3DTEXF_NONE
-	//);
-
-	/*for (int i = 0; i < MAX_SPRITE_COUNT; ++i)
+	for (int i = 0; i < MAX_SPRITE_COUNT; ++i)
 	{
 		if (spriteStruct[i].curFrame < spriteStruct[i].numFrames)
 			++spriteStruct[i].curFrame;
@@ -394,7 +345,7 @@ void Render()
 			&dst,
 			D3DTEXF_NONE
 		);
-	}*/
+	}
 
 	// Present the back buffer contents to the display
 	pd3dDevice->Present(NULL, NULL, NULL, NULL);
@@ -487,10 +438,6 @@ bool InitTextures()
 {
 	spriteSurface = GetSurfaceFromBitmap("sprite.bmp", 860, 366);
 	if (spriteSurface == NULL)
-		return false;
-
-	spriteSurface1 = GetSurfaceFromBitmap("chat.bmp", 506, 800);
-	if (spriteSurface1 == NULL)
 		return false;
 
 	return true;

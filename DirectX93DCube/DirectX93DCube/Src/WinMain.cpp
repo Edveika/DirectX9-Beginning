@@ -20,8 +20,7 @@ HINSTANCE hInst; // handle to hold the application instance
 HWND wndHandle; // holds the windle handle
 LPDIRECT3D9 pD3D; // Direct3D object
 LPDIRECT3DDEVICE9 pd3dDevice; // d3d9 device
-LPDIRECT3DVERTEXBUFFER9 g_pVB = NULL;
-LPDIRECT3DINDEXBUFFER9 g_pIB = NULL;
+LPDIRECT3DVERTEXBUFFER9 g_pVB = NULL; // vertex buffer
 
 // Identiy matrix default values:
 //float TheMatrix[4][4] =
@@ -52,7 +51,6 @@ void Render();
 void CleanUp();
 void AddItemToList(std::string item);
 HRESULT SetupVertexBuffer();
-HRESULT SetupIndexBuffer();
 
 // WinMain is a main entry point for windows applications
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -63,6 +61,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	// Initialize direct3d
 	if (!InitDirect3D())
+		return false;
+
+	// Setup vertex buffer
+	if (SetupVertexBuffer() == E_FAIL)
 		return false;
 
 	// Main message loop
@@ -91,9 +93,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		// Otherwise
 		else
 		{
-			SetupVertexBuffer();
-			SetupIndexBuffer();
-
 			// Render function is being called once a frame
 			Render();
 		}
@@ -301,7 +300,7 @@ void Render()
 	// build a matrix to move the model 12 units along the x-axis and 4 units along the y-axis
 	// store it to matTranslate
 	//static float move = 0.0f; move += 0.05f;
-	D3DXMatrixTranslation(&matTranslate, 12.0f, index, 0.0f);
+	D3DXMatrixTranslation(&matTranslate, 12.0f, 0.0f, 0.0f);
 
 	// tell Direct3D about our matrix
 	pd3dDevice->SetTransform(D3DTS_WORLD, &(matRotateX * matRotateY* matTranslate));
@@ -331,15 +330,6 @@ void Render()
 	pd3dDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 12, 2);
 	pd3dDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 16, 2);
 	pd3dDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 20, 2);
-
-	//pd3dDevice->SetIndices(g_pIB);
-
-	//pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, // PrimitiveType
-	//	0,                  // BaseVertexIndex
-	//	0,                  // MinIndex
-	//	36,                  // NumVertices
-	//	0,                  // StartIndex
-	//	12);                // PrimitiveCount
 
 	pd3dDevice->EndScene();
 
@@ -441,65 +431,6 @@ HRESULT SetupVertexBuffer()
 	memcpy(pVertices, vertices, sizeof(vertices));
 
 	g_pVB->Unlock();
-
-	return S_OK;
-}
-
-HRESULT SetupIndexBuffer()
-{
-	HRESULT hr;
-
-	CUSTOMVERTEX vertices[] =
-	{
-		{-1.0f,1.0f,-1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{-1.0f,1.0f,-1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{1.0f,1.0f,-1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{1.0f,-1.0f,-1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{-1.0f,-1.0f,1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{1.0f,-1.0f,1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{1.0f,1.0f,1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-		{-1.0f,1.0f,1.0f, D3DCOLOR_ARGB(0,0,0,255)},
-	};
-
-	WORD indexes[] =
-	{
-		0,1,2,
-		2,3,0,
-		4,5,6,
-		6,7,4,
-		0,3,5,
-		5,4,0,
-		3,2,6,
-		6,5,3,
-		2,1,7,
-		7,6,2,
-		1,0,4,
-		4,7,1
-	};
-
-	hr = pd3dDevice->CreateIndexBuffer
-	(
-		sizeof(indexes) * sizeof(WORD),
-		D3DUSAGE_WRITEONLY,
-		D3DFMT_INDEX16,
-		D3DPOOL_DEFAULT,
-		&g_pIB,
-		NULL
-	);
-
-	if (FAILED(hr))
-		return E_FAIL;
-
-	void* indexPtr;
-
-	hr = g_pIB->Lock(0, 0, (void**)&indexPtr, D3DLOCK_DISCARD);
-
-	if (FAILED(hr))
-		return E_FAIL;
-
-	memcpy(vertices, indexes, sizeof(indexes));
-
-	g_pIB->Unlock();
 
 	return S_OK;
 }
