@@ -19,6 +19,28 @@ Learning DX9 API from Weny Jones' book: Beginning DirectX9, playing around with 
 * XAudio2
 * DVD bounce like application
 
+# 📋 Requirements
+
+* C++ RunTime
+* DirectX SDK
+* Visual Studio
+
+# 💿 Binaries
+
+You can download the compiled binaries of these projects in the releases page.
+
+* Download the latest release
+* Extract from .zip file
+* Select the project you want to run
+* Launch the exe
+
+# 🔧 Building
+
+* Open .sln using Visual Studio
+* Make sure the solution properties are updated(build tools, etc).
+* Fix DX9 include errors if needed
+* Click build
+
 # 🤝 Credits
 
 🧑‍🏫 Weny Jones - for the book
