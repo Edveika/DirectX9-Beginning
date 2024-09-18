@@ -8,7 +8,7 @@ Learning DX9 API from Weny Jones' book: Beginning DirectX9, playing around with 
 * 3D cube
 * Chat Scroll project
 * Index buffers
-* Lightning
+* Lighting
 * LineList
 * Custom meshes
 * Particles(not finished)
