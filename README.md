@@ -29,7 +29,7 @@ Learning DX9 API from Weny Jones' book: Beginning DirectX9, playing around with 
 
 You can download the compiled binaries of these projects in the releases page.
 
-* Download the latest release
+* Download the [latest release](https://github.com/Edveika/DirectX9-Beginning/releases)
 * Extract from .zip file
 * Select the project you want to run
 * Launch the exe
