@@ -12,7 +12,7 @@ ParticleSystemManager::~ParticleSystemManager()
 // Init particle system manager
 bool ParticleSystemManager::Initialize()
 {
-
+	return true;
 }
 
 // Shutdown particle system manager

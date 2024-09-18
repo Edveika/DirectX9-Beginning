@@ -291,15 +291,21 @@ void Render()
 	//static float move = 0.0f; move += 0.05f;
 	D3DXMatrixTranslation(&matTranslate, 12.0f, 0.0f, 0.0f);
 
+	D3DXMATRIX transformMatrix = matRotateX * matRotateY * matTranslate;
+
 	// tell Direct3D about our matrix
-	pd3dDevice->SetTransform(D3DTS_WORLD, &(matRotateX * matRotateY * matTranslate));
+	pd3dDevice->SetTransform(D3DTS_WORLD, &transformMatrix);
 
 	D3DXMATRIX matView;    // the view transform matrix
 
+	D3DXVECTOR3 cameraPos = D3DXVECTOR3(0.0f, 0.0f, 10.0f);
+	D3DXVECTOR3 lookAtPos = D3DXVECTOR3(12.0f, 0.0f, 0.0f);
+	D3DXVECTOR3 upDir = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
+
 	D3DXMatrixLookAtLH(&matView,
-		&D3DXVECTOR3(0.0f, 0.0f, 20.0f),    // the camera position
-		&D3DXVECTOR3(12.0f, 0.0f, 0.0f),    // the look-at position
-		&D3DXVECTOR3(0.0f, 1.0f, 0.0f));    // the up direction
+		&cameraPos,    // the camera position
+		&lookAtPos,    // the look-at position
+		&upDir);    // the up direction
 
 	pd3dDevice->SetTransform(D3DTS_VIEW, &matView);    // set the view transform to matView
 

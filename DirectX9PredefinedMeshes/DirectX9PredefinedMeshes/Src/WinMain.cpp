@@ -274,9 +274,12 @@ void Render()
 
 	pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
 
+	D3DXMATRIX viewMatrix = MatrixView(D3DXVECTOR3(0.0f, 0.0f, 80.0f), D3DXVECTOR3(12.0f, 0.0f, 0.0f), D3DXVECTOR3(0.0f, 1.0f, 0.0f));
+	D3DXMATRIX projectionMatrix = MatrixProjection(1.0f, 1000.0f, 45);
+
 	// Set the view and projection matrices
-	pd3dDevice->SetTransform(D3DTS_VIEW, &MatrixView(D3DXVECTOR3(0.0f, 0.0f, 80.0f), D3DXVECTOR3(12.0f, 0.0f, 0.0f), D3DXVECTOR3(0.0f, 1.0f, 0.0f)));    // set the view transform to matView
-	pd3dDevice->SetTransform(D3DTS_PROJECTION, &MatrixProjection(1.0f, 1000.0f, 45));    // set the projection
+	pd3dDevice->SetTransform(D3DTS_VIEW, &viewMatrix);    // set the view transform to matView
+	pd3dDevice->SetTransform(D3DTS_PROJECTION, &projectionMatrix);    // set the projection
 
 	static float indexX = 0.0f; indexX += 0.05f;
 	static float indexY = 0.0f; indexY += 0.05f;
@@ -398,28 +401,37 @@ D3DXMATRIX MatrixScale(float scaleX, float scaleY, float scaleZ)
 
 void DrawBox(float rotationIndexX, float rotationIndexY, float rotationIndexZ, float translateX, float translateY, float translateZ, float scaleX, float scaleY, float scaleZ)
 {
-	pd3dDevice->SetTransform(D3DTS_WORLD, &(MatrixScale(scaleX, scaleY, scaleZ) * MatrixRotation(rotationIndexX, rotationIndexY, rotationIndexZ) * MatrixTranslation(translateX, translateY, translateZ)));
+	D3DXMATRIX scaleMatrix = MatrixScale(scaleX, scaleY, scaleZ) * MatrixRotation(rotationIndexX, rotationIndexY, rotationIndexZ) * MatrixTranslation(translateX, translateY, translateZ);
+	pd3dDevice->SetTransform(D3DTS_WORLD, &scaleMatrix);
 
 	box->DrawSubset(0);
 }
 
 void DrawSphere(float rotationIndexX, float rotationIndexY, float rotationIndexZ, float translateX, float translateY, float translateZ, float scaleX, float scaleY, float scaleZ)
 {
-	pd3dDevice->SetTransform(D3DTS_WORLD, &(MatrixScale(scaleX, scaleY, scaleZ) * MatrixRotation(rotationIndexX, rotationIndexY, rotationIndexZ) * MatrixTranslation(translateX, translateY, translateZ)));
+	// what matrix is this????????
+	D3DXMATRIX matrixMultiply = MatrixScale(scaleX, scaleY, scaleZ) * MatrixRotation(rotationIndexX, rotationIndexY, rotationIndexZ) * MatrixTranslation(translateX, translateY, translateZ);
+	pd3dDevice->SetTransform(D3DTS_WORLD, &matrixMultiply);
 
 	sphere->DrawSubset(0);
 }
 
 void DrawCylinder(float rotationIndexX, float rotationIndexY, float rotationIndexZ, float translateX, float translateY, float translateZ, float scaleX, float scaleY, float scaleZ)
 {
-	pd3dDevice->SetTransform(D3DTS_WORLD, &(MatrixScale(scaleX, scaleY, scaleZ) * MatrixRotation(rotationIndexX, rotationIndexY, rotationIndexZ) * MatrixTranslation(translateX, translateY, translateZ)));
+	// what matrix is this????????
+	D3DXMATRIX matrixMultiply = MatrixScale(scaleX, scaleY, scaleZ) * MatrixRotation(rotationIndexX, rotationIndexY, rotationIndexZ) * MatrixTranslation(translateX, translateY, translateZ);
+
+	pd3dDevice->SetTransform(D3DTS_WORLD, &matrixMultiply);
 
 	cylinder->DrawSubset(0);
 }
 
 void DrawTeapot(float rotationIndexX, float rotationIndexY, float rotationIndexZ, float translateX, float translateY, float translateZ, float scaleX, float scaleY, float scaleZ)
 {
-	pd3dDevice->SetTransform(D3DTS_WORLD, &(MatrixScale(scaleX, scaleY, scaleZ) * MatrixRotation(rotationIndexX, rotationIndexY, rotationIndexZ) * MatrixTranslation(translateX, translateY, translateZ)));
+	// what matrix is this????????
+	D3DXMATRIX matrixMultiply = MatrixScale(scaleX, scaleY, scaleZ) * MatrixRotation(rotationIndexX, rotationIndexY, rotationIndexZ) * MatrixTranslation(translateX, translateY, translateZ);
+
+	pd3dDevice->SetTransform(D3DTS_WORLD, &matrixMultiply);
 
 	teapot->DrawSubset(0);
 }

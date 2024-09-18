@@ -268,9 +268,12 @@ void Render()
 
 	pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
 
+	D3DXMATRIX viewMatrix = MatrixView(D3DXVECTOR3(0.0f, 0.0f, 80.0f), D3DXVECTOR3(12.0f, 0.0f, 0.0f), D3DXVECTOR3(0.0f, 1.0f, 0.0f));
+	D3DXMATRIX projectionMatrix = MatrixProjection(1.0f, 1000.0f, 45);
+
 	// Set the view and projection matrices
-	pd3dDevice->SetTransform(D3DTS_VIEW, &MatrixView(D3DXVECTOR3(0.0f, 0.0f, 80.0f), D3DXVECTOR3(12.0f, 0.0f, 0.0f), D3DXVECTOR3(0.0f, 1.0f, 0.0f)));    // set the view transform to matView
-	pd3dDevice->SetTransform(D3DTS_PROJECTION, &MatrixProjection(1.0f, 1000.0f, 45));    // set the projection
+	pd3dDevice->SetTransform(D3DTS_VIEW, &viewMatrix);    // set the view transform to matView
+	pd3dDevice->SetTransform(D3DTS_PROJECTION, &projectionMatrix);    // set the projection
 
 	pd3dDevice->EndScene();
 
